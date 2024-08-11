@@ -1,0 +1,12 @@
+[
+    {
+        "name": "Bogdan Chifor",
+        "email": "bogdan.chifor@tii.ae",
+        "user_id": 123
+    },
+    {
+        "name": "Lasse Mattila",
+        "email": "lasse.mattile@tii.ae",
+        "user_id": 456
+    }
+]
