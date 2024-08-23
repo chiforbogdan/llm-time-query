@@ -82,7 +82,6 @@ def extract_metadata_from_linux_log(log_line):
     else:
         return None, None
 
-
 class LLMIndex:
     def __init__(self):
         client = EphemeralClient()
@@ -137,6 +136,9 @@ class LLMIndex:
             # where={"user_id": uid}
         )
         
+        if len(results['documents']) == 0 or len(results['documents'][0]) == 0:
+            return f"There are no logcat entries for user with ID {uid} at the specified time interval. Please tell human that you don't know the answer."
+
         result = results['documents'][0][0]
         print(f"Query logcat result: {result}")
 

@@ -120,8 +120,9 @@ class LLMQuery:
                     "system",
                     "You are an expert system administrator with can interpret Android logs (logcat)."
                     "You can get the logcat information using the user ID."
+
                     "When querying a log tool you need to specify the start time and end time of the query relative to the current time which you must get using a tool."
-                    # "If there is no start time and end time specified by human, you should assume end time is current time and start time is beggining of current day."
+                    "If there is no time interval specified by human, query log with end time as current time and start time is beggining of current day: get this info using time tool."
                     "If there are multiple users in the query you need to get individual information for each user."
                     
                 ),
