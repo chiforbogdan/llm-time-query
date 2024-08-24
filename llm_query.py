@@ -86,7 +86,7 @@ class AndroidUserIdTool(BaseTool):
     def _run(self, user: str):
         print(f"DBG GET USER ID for {user}")
 
-        users_db = self.metadata['index'].get_users()
+        users_db = self.metadata['index'].get_android_users()
 
         parser = PydanticOutputParser(pydantic_object=UserId)
         prompt = PromptTemplate(
@@ -101,6 +101,37 @@ class AndroidUserIdTool(BaseTool):
         )
         
         input = prompt.format_prompt(user=user, users_db=users_db)
+        output = self.metadata['llm'](input.to_string())
+        user_id = parser.parse(output.content).user_id
+        print(f"DBG USER ID for name: {user} is {user_id}")
+
+        return user_id
+
+    def _arun(self):
+        raise NotImplementedError("This tool does not support async")
+    
+class LinuxUsername(BaseTool):
+    name = "get_linux_username"
+    description = "use this tool when you need to find the Linux username for a single name that appears in the query. The input must be a name or a Firstname Lastname combination."
+
+    def _run(self, user: str):
+        print(f"DBG GET LINUX USER ID for {user}")
+
+        etc_passwd = self.metadata['index'].get_linux_users()
+
+        parser = PydanticOutputParser(pydantic_object=UserId)
+        prompt = PromptTemplate(
+            template="You are Linux system administrator expert which has access to /etc/passwd file from a system."
+                    "You are given a user's name or a partial name. You need to deliver the Linux username which best matches the given name."
+                    "For matching the given input name with a Linux username you need to analyze the /etc/passwd entries."
+                    "\n{format_instructions}"
+                    "\n Linux /etc/passwd file content:{users_db}"
+                    "\nThe name for which you need to deliver the ID is the following: {user}\n",
+            input_variables=["query", "users_db"],
+            partial_variables={"format_instructions": parser.get_format_instructions()},
+        )
+        
+        input = prompt.format_prompt(user=user, users_db=etc_passwd)
         output = self.metadata['llm'](input.to_string())
         user_id = parser.parse(output.content).user_id
         print(f"DBG USER ID for name: {user} is {user_id}")
@@ -136,7 +167,8 @@ class LLMQuery:
                  LogcatTool(metadata={'index': index}),
                  CurrentTimeTool(),
                  IpBlacklistTool(),
-                 IpWhitelistTool()]
+                 IpWhitelistTool(),
+                 LinuxUsername(metadata={'index': index, 'llm': llm})]
         llm_with_tools = llm.bind_tools(tools)
 
         agent = (

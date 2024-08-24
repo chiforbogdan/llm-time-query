@@ -96,8 +96,12 @@ class LLMIndex:
         with open(file_path, 'r') as file:
             self.users = file.read()
 
-    def get_users(self):
+    def get_android_users(self):
         return self.users
+    
+    def get_linux_users(self):
+        with open("/etc/passwd", "r") as file:
+            return file.read()
 
     def _index_logcat(self, uid, start_date, end_date, file_name, file_content):
         start_timestamp = int(start_date.timestamp())
