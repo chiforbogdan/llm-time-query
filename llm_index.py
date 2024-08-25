@@ -4,6 +4,10 @@ from datetime import datetime
 from datetime import datetime
 from chromadb import EphemeralClient
 from sentence_transformers import SentenceTransformer
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+
+
+from openai import OpenAI
 
 logcat_date_format = "%m-%d %H:%M:%S.%f"
 log_entry_pattern = re.compile(r"(\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3})")
@@ -86,11 +90,13 @@ class LLMIndex:
     def __init__(self):
         client = EphemeralClient()
         self.collection = client.create_collection("logcat")
-        self.model = SentenceTransformer('sentence-transformers/all-MiniLM-L12-v2')
+        # self.model = SentenceTransformer('sentence-transformers/all-MiniLM-L12-v2')
+        self.model = OpenAI()
         self.ids = 0
 
     def _get_embedding(self, text):
-        return self.model.encode(text).tolist()
+        # return self.model.encode(text).tolist()
+        return self.model.embeddings.create(input = [text], model="text-embedding-3-small").data[0].embedding
     
     def load_users(self, file_path):
         with open(file_path, 'r') as file:
@@ -107,22 +113,27 @@ class LLMIndex:
         start_timestamp = int(start_date.timestamp())
         end_timestamp = int(end_date.timestamp())
         print(f"DBG index logcat file {file_name} for uid: {uid} with start date: {start_timestamp} and end date: {end_timestamp}")
-        # TODO split into chunks
-        embedding = self._get_embedding(file_content)
-        self.collection.add(
-            documents=[file_content],
-            embeddings=[embedding],
-            metadatas=[{"start_timestamp": start_timestamp, "end_timestamp": end_timestamp,  "user_id": uid}],
-            ids=[str(self.ids)]
-        )
-        self.ids = self.ids + 1
-        return
+
+        splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
+        chunks = splitter.split_text(file_content)
+
+        for chunk in chunks:
+            embedding = self._get_embedding(chunk)
+            self.collection.add(
+                documents=[chunk],
+                embeddings=[embedding],
+                metadatas=[{"start_timestamp": start_timestamp, "end_timestamp": end_timestamp,  "user_id": uid}],
+                ids=[str(self.ids)]
+            )
+            self.ids = self.ids + 1
 
     def load_logcat(self, logcat_dir):
         entries = os.listdir(logcat_dir)
         files = [entry for entry in entries if os.path.isfile(os.path.join(logcat_dir, entry))]
         for file in files:
             file_path = os.path.join(logcat_dir, file)
+            if not file_path.endswith(".logcat"):
+                continue
             start_date, end_date = extract_dates_from_logcat(file_path)
             uid = file.split("_")[0]
             with open(file_path, 'r') as f:

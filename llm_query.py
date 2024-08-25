@@ -188,6 +188,8 @@ class LLMQuery:
         self.chat_history = []
 
     def query(self, query: str):
+        # TODO do i wanna add this here?
+        #self.chat_history = []
         result = self.agent_executor.invoke({"input": query, "chat_history": self.chat_history})
         self.chat_history.extend(
             [
@@ -195,3 +197,4 @@ class LLMQuery:
                 AIMessage(content=result["output"]),
             ]
         )
+        return result["output"]
