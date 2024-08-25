@@ -61,7 +61,7 @@ def main():
         },
         {
             'test_id': 2,
-            'query': 'What is the status of Android application MyApp1 on 10th august this year and MyApp2 on 11th august this year for user Bogdan?',
+            'query': 'I am interested in applications MyApp1 and MyApp2 for user Bogdan. Were the applications MyApp1 runnning on 10th august and MyApp2 running on 11th August on year 2024?',
             'responses': [{
                 'user': 'Bogdan',
                 'application': 'myapp1',
@@ -92,7 +92,7 @@ def main():
         },
         {
             'test_id': 5,
-            'query': 'What app was used by user John on 20 Aug and what was the status? What about user Chifor on 10 Aug and Ram on 15 aug?',
+            'query': 'Was MyApp5 used by user John on 20 Aug and what was the status? What about user Chifor with MyApp1 on 10 Aug and user Ram with MyApp3 on 15 aug?',
             'responses': [{
                 'user': 'John',
                 'application': 'myapp5',

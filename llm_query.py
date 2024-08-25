@@ -25,12 +25,12 @@ class UserId(BaseModel):
     user_id: str = Field(description="id of a user given his firstname, lastname or a combination of these")
 
 class UserSubject(BaseModel):
-    user_names: List[str] = Field(description="name of the user specified in the query")
+    user_names: List[str] = Field(description="name of the user specified in the query. It must be a user name and not any other name.")
 
 class LogcatInput(BaseModel):
     user_id: str = Field(description="android user id")
-    start_time: datetime = Field(description="start time for logcat queries")
-    end_time: datetime = Field(description="end time for logcat queries")
+    start_time: datetime = Field(description="start time for logcat queries. Use current year obtained from the time current time tool.")
+    end_time: datetime = Field(description="end time for logcat queries. Use current year obtained from the time current time tool.")
     android_query: str = Field(description="android specific query for a user. What should you query in the logcat file.")
 
 class IpWhitelistTool(BaseTool):
@@ -38,7 +38,7 @@ class IpWhitelistTool(BaseTool):
     description = "use this tool when you need to get a list of whitelist IP addresses"
 
     def _run(self):
-        print(f"DBG get whitelist IP")
+        print(f"Get whitelist IP")
         return "1.1.1.1"
 
     def _arun(self):
@@ -49,7 +49,7 @@ class IpBlacklistTool(BaseTool):
     description = "use this tool when you need to get a list of blacklist IP addresses"
 
     def _run(self):
-        print(f"DBG get blacklist IP")
+        print(f"Get blacklist IP")
         return "8.8.8.8"
 
     def _arun(self):
@@ -61,7 +61,7 @@ class CurrentTimeTool(BaseTool):
 
     def _run(self):
         current_time = datetime.now().isoformat()
-        print(f"DBG get current time {current_time}")
+        print(f"Get current time {current_time}")
         return current_time
 
     def _arun(self):
@@ -73,7 +73,7 @@ class LogcatTool(BaseTool):
     args_schema: Type[BaseModel] = LogcatInput
 
     def _run(self, user_id: str, start_time: datetime, end_time: datetime, android_query: str):
-        print(f"DBG GET LOGCAT for {user_id} start time: {start_time} end time: {end_time} android_query: {android_query}")
+        print(f"GET LOGCAT for {user_id} start time: {start_time} end time: {end_time} android_query: {android_query}")
         return self.metadata['index'].query_logcat(user_id, start_time, end_time, android_query)
 
     def _arun(self):
@@ -84,7 +84,7 @@ class AndroidUserIdTool(BaseTool):
     description = "use this tool when you need to find the Android user identifier (user ID) for a single name that appears in the query. The input must be a name or a Firstname Lastname combination."
 
     def _run(self, user: str):
-        print(f"DBG GET USER ID for {user}")
+        print(f"GET USER ID for {user}")
 
         users_db = self.metadata['index'].get_android_users()
 
@@ -103,7 +103,7 @@ class AndroidUserIdTool(BaseTool):
         input = prompt.format_prompt(user=user, users_db=users_db)
         output = self.metadata['llm'](input.to_string())
         user_id = parser.parse(output.content).user_id
-        print(f"DBG USER ID for name: {user} is {user_id}")
+        print(f"USER ID for name: {user} is {user_id}")
 
         return user_id
 
@@ -115,7 +115,7 @@ class LinuxUsername(BaseTool):
     description = "use this tool when you need to find the Linux username for a single name that appears in the query. The input must be a name or a Firstname Lastname combination."
 
     def _run(self, user: str):
-        print(f"DBG GET LINUX USER ID for {user}")
+        print(f"GET LINUX USER ID for {user}")
 
         etc_passwd = self.metadata['index'].get_linux_users()
 
@@ -134,7 +134,7 @@ class LinuxUsername(BaseTool):
         input = prompt.format_prompt(user=user, users_db=etc_passwd)
         output = self.metadata['llm'](input.to_string())
         user_id = parser.parse(output.content).user_id
-        print(f"DBG USER ID for name: {user} is {user_id}")
+        print(f"USER ID for name: {user} is {user_id}")
 
         return user_id
 
@@ -150,11 +150,14 @@ class LLMQuery:
                 (
                     "system",
                     "You are an expert system administrator with can interpret Android logs (logcat)."
-                    "You can get the logcat information using the user ID."
+                    "You are asked question about the Android status of an application."
+                    "You need to identify correctly in the question the user you need to find information about and the applications."
+                    "You need to convert the user name to a user ID."
+                    "You can get the logcat information for a certain user name using the user ID."
 
                     "When querying a log tool you need to specify the start time and end time of the query relative to the current time which you must get using a tool."
                     "If there is no time interval specified by human, query log with end time as current time and start time is beggining of current day: get this info using time tool."
-                    "If there are multiple users in the query you need to get individual information for each user."
+                    "If there are multiple names in the query you need to query log for each user. Handle each user separately."
                     
                 ),
                 MessagesPlaceholder(variable_name='chat_history'),

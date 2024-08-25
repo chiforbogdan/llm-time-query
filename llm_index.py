@@ -112,7 +112,7 @@ class LLMIndex:
     def _index_logcat(self, uid, start_date, end_date, file_name, file_content):
         start_timestamp = int(start_date.timestamp())
         end_timestamp = int(end_date.timestamp())
-        print(f"DBG index logcat file {file_name} for uid: {uid} with start date: {start_timestamp} and end date: {end_timestamp}")
+        print(f"Index logcat file {file_name} for uid: {uid} with start date: {start_timestamp} and end date: {end_timestamp}")
 
         splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
         chunks = splitter.split_text(file_content)

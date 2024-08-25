@@ -30,6 +30,8 @@ class LLMEvaluator:
         )
 
         for test in tests:
+            test_id = test['test_id']
+            print(f"####################### Running test {test_id} ################################")
             sentence = self.llm_querier.query(test['query'])
             input=prompt.format_prompt(sentence=sentence).to_string()
             output = self.model(input)
@@ -46,7 +48,6 @@ class LLMEvaluator:
                 if not found:
                     passed = False
                     break
-            test_id = test['test_id']
             if passed == True:
                 print(f"Test {test_id}: PASS")
             else:
