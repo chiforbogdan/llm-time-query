@@ -82,14 +82,15 @@ def extract_metadata_from_linux_log(log_line):
             'pid': proc_info['pid'],
         }
 
-        return metadata, text[1]
+        return metadata
     else:
-        return None, None
+        print("Error in processing log:", log_line)
+        return None
 
 class LLMIndex:
-    def __init__(self):
+    def __init__(self, name):
         client = EphemeralClient()
-        self.collection = client.create_collection("logcat")
+        self.collection = client.create_collection(name)
         # self.model = SentenceTransformer('sentence-transformers/all-MiniLM-L12-v2')
         self.model = OpenAI()
         self.ids = 0
@@ -159,6 +160,22 @@ class LLMIndex:
 
         return result
 
+    def query_linux_log(self, query):
+        print(f"Linux query: {query}")
+        embedding = self._get_embedding(query)
+
+        results = self.collection.query(
+            query_embeddings=[embedding],
+            n_results = 1000
+        )
+        
+        if len(results['documents']) == 0 or len(results['documents'][0]) == 0:
+            return f"There are no relevent entries for the query. Please tell human that you don't know the answer."
+
+        result = results['documents'][0]
+        #print(f"Linux Log Query result: {results}")
+
+        return result
     def load_linux_log(self, linux_log_dir):
         entries = os.listdir(linux_log_dir)
         files = [entry for entry in entries if os.path.isfile(os.path.join(linux_log_dir, entry))]
@@ -166,15 +183,15 @@ class LLMIndex:
             file_path = os.path.join(linux_log_dir, file)
             with open(file_path, 'r') as fd:
                 for line in fd:
-                    metadata, log = extract_metadata_from_linux_log(file)
+                    metadata = extract_metadata_from_linux_log(line)
                     if metadata is None:
                         continue
-                    embedding = self._get_embedding(log)
+                    embedding = self._get_embedding(line)
                     #print("Adding:", metadata, ids, log)
                     self.collection.add(
-                        documents=[log],
+                        documents=[line],
                         embeddings=[embedding],
-                        metadatas=[metadata],
+                        #metadatas=[metadata],
                         ids=[str(self.ids)]
                     )
                     self.ids = self.ids + 1
