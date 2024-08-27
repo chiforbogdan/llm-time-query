@@ -161,12 +161,12 @@ class LLMIndex:
         return result
 
     def query_linux_log(self, query):
-        print(f"Linux query: {query}")
+        #print(f"Linux query: {query}")
         embedding = self._get_embedding(query)
 
         results = self.collection.query(
             query_embeddings=[embedding],
-            n_results = 1000
+            n_results = 50
         )
         
         if len(results['documents']) == 0 or len(results['documents'][0]) == 0:
